@@ -1,0 +1,14 @@
+name: Interval Merge
+
+on:
+  push:
+    paths:
+      - 'interval_merge/**'
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "no-op"
