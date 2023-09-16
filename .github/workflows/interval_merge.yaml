@@ -26,3 +26,21 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: node interval_merge/javascript/merge.js
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: interval_merge/rust
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          # Use stable since Rust is forwards-compatibility
+          # and the code should keep compiling with newer versions.
+          # Rust std is the only dependency.
+          toolchain: stable
+          components: rustfmt, clippy
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --tests --all-features -- -D warnings
+      - run: cargo test --verbose --all-features 
