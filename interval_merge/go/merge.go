@@ -62,13 +62,20 @@ func merge_into(source Interval, intervals []Interval) []Interval {
 // End changes on merge to the higher value of either end or the upper bound of the merged interval.
 // from is the index of the interval in intervals, which started the rollup because its upper bound grew.
 func rollup(intervals []Interval, from int, end int) []Interval {
+	n := -1
 	for i, interval := range intervals[from+1:] {
 		// is interval smaller than the upper bound?
 		if interval.start < end {
 			end = max(end, interval.end)
-			// Re-slicing is expensive, could be optimized by storing the to be deleted ranges
-			intervals = append(intervals[:i+from+1], intervals[i+from+2:]...)
+			n = from + 1 + i
+		} else {
+			// All following intervals are larger than end, break
+			break
 		}
+	}
+	// Slice if merge happened
+	if n > -1 {
+		intervals = append(intervals[:from+1], intervals[n+1:]...)
 	}
 	intervals[from].end = end
 	return intervals

@@ -52,6 +52,10 @@ func TestMerge(t *testing.T) {
 			name:     "negative ranges",
 			input:    []interval.Interval{interval.New(-4, 0), interval.New(-1, 2)},
 			expected: []interval.Interval{interval.New(-4, 2)},
+		}, {
+			name:     "rollup slice bounds out of range",
+			input:    []interval.Interval{interval.New(0, 1), interval.New(2, 3), interval.New(3, 4), interval.New(4, 5), interval.New(0, 5)},
+			expected: []interval.Interval{interval.New(0, 5)},
 		},
 	}
 
