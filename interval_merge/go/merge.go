@@ -9,10 +9,6 @@ func New(start, end int) Interval {
 	return Interval{start, end}
 }
 
-func (i Interval) contains(point int) bool {
-	return i.start < point && point < i.end
-}
-
 func Merge(intervals []Interval) []Interval {
 	merged_intervals := make([]Interval, 0, 8)
 	for _, interval := range intervals {
