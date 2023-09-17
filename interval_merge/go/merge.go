@@ -39,7 +39,7 @@ func merge_into(source Interval, intervals []Interval) []Interval {
 			return intervals
 		}
 		// Is source start inside interval?
-		if source.start > interval.start && source.start < interval.end {
+		if source.start >= interval.start && source.start < interval.end {
 			intervals[i].end = max(interval.end, source.end)
 			return rollup(intervals, i, intervals[i].end)
 		}
