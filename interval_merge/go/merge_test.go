@@ -103,3 +103,15 @@ func BenchmarkMerge(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkMergeWithHugeRollup(b *testing.B) {
+	intervals := make([]interval.Interval, 1_000)
+	for i := range intervals {
+		intervals[i] = interval.New(i, i+1)
+	}
+	intervals[len(intervals)-1] = interval.New(0, len(intervals))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		interval.Merge(intervals)
+	}
+}
