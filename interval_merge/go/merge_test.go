@@ -1,8 +1,11 @@
 package interval_test
 
 import (
-	interval "github.com/marshauf/coding_challenges/interval_merge/go"
+	"fmt"
+	"math/rand"
 	"testing"
+
+	interval "github.com/marshauf/coding_challenges/interval_merge/go"
 )
 
 type row struct {
@@ -60,6 +63,39 @@ func TestMerge(t *testing.T) {
 				t.Errorf("Expected %v to be merged to %v, got %v", row.input, row.expected, res)
 			}
 
+		})
+	}
+}
+
+func generateBenchmarkInput(size int, seed int64) []interval.Interval {
+	r := rand.New(rand.NewSource(seed))
+	intervalMaxSize := 10
+	intervalMaxStart := size * 100
+
+	intervals := make([]interval.Interval, size)
+	for i := range intervals {
+		start := r.Intn(intervalMaxStart)
+		end := start + r.Intn(intervalMaxSize)
+		intervals[i] = interval.New(start, end)
+	}
+	return intervals
+}
+
+func BenchmarkMerge(b *testing.B) {
+	table := []struct{ size int }{
+		{size: 1},
+		{size: 10},
+		{size: 100},
+		{size: 1_000},
+		{size: 10_000},
+	}
+	for _, row := range table {
+		b.Run(fmt.Sprintf("size_%d", row.size), func(b *testing.B) {
+			intervals := generateBenchmarkInput(row.size, 0)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				interval.Merge(intervals)
+			}
 		})
 	}
 }
