@@ -12,6 +12,56 @@ func New(start, end int) Interval {
 	return Interval{start, end}
 }
 
+// MergeFleet merges all intervals together which overlap.
+// Uses a number of workers to merge large amounts of intervals.
+// The input is send via a channel.
+// Resulting in a sorted slice of Intervals, where no Interval overlaps another.
+// Intervals are bound inclusively below and exclusively above.
+// Which means when an Interval upper bound is the same as another Intervals lower bound,
+// both intervals don't overlap.
+// The function returns after intervals channel closes.
+func MergeFleet(intervals chan Interval, workers int) []Interval {
+	output := make(chan []Interval)
+	done := make(chan byte)
+	for i := 0; i < workers; i++ {
+		go (func() {
+			output <- MergeFromChan(intervals)
+			done <- 0
+		})()
+	}
+	go (func() {
+		for range done {
+			workers -= 1
+			if workers <= 0 {
+				close(output)
+				close(done)
+				return
+			}
+		}
+	})()
+	var result []Interval
+	for res := range output {
+		result = append(result, res...)
+	}
+	return Merge(result)
+}
+
+// MergeFromChan merges all intervals together which overlap.
+// Resulting in a sorted slice of Intervals, where no Interval overlaps another.
+// Intervals are bound inclusively below and exclusively above.
+// Which means when an Interval upper bound is the same as another Intervals lower bound,
+// both intervals don't overlap.
+// The function returns after intervals channel closes.
+// Use this function for inputs where the number of intervals is unknown and/or
+// if memory is constrained.
+func MergeFromChan(intervals chan Interval) []Interval {
+	merged_intervals := make([]Interval, 0, 8)
+	for interval := range intervals {
+		merged_intervals = merge_into(interval, merged_intervals)
+	}
+	return merged_intervals
+}
+
 // Merges all intervals together which overlap.
 // Resulting in a sorted slice of Intervals, where no Interval overlaps another.
 // Intervals are bound inclusively below and exclusively above.

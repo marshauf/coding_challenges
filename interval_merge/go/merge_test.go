@@ -60,14 +60,40 @@ func TestMerge(t *testing.T) {
 	}
 
 	for _, row := range table {
-		t.Run(row.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("Merge with %s", row.name), func(t *testing.T) {
 			res := interval.Merge(row.input)
 
 			if !equal(res, row.expected) {
 				t.Errorf("Expected %v to be merged to %v, got %v", row.input, row.expected, res)
 			}
-
 		})
+		t.Run(fmt.Sprintf("CMerge with %s", row.name), func(t *testing.T) {
+			c := make(chan interval.Interval, 10)
+			go (func() {
+				for _, interval := range row.input {
+					c <- interval
+				}
+				close(c)
+			})()
+			res := interval.MergeFromChan(c)
+			if !equal(res, row.expected) {
+				t.Errorf("Expected %v to be merged to %v, got %v", row.input, row.expected, res)
+			}
+		})
+		t.Run(fmt.Sprintf("MergeFleet with %s", row.name), func(t *testing.T) {
+			c := make(chan interval.Interval, 10)
+			go (func() {
+				for _, interval := range row.input {
+					c <- interval
+				}
+				close(c)
+			})()
+			res := interval.MergeFleet(c, 8)
+			if !equal(res, row.expected) {
+				t.Errorf("Expected %v to be merged to %v, got %v", row.input, row.expected, res)
+			}
+		})
+
 	}
 }
 
@@ -99,6 +125,62 @@ func BenchmarkMerge(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				interval.Merge(intervals)
+			}
+		})
+	}
+}
+
+func BenchmarkMergeFromChan(b *testing.B) {
+	table := []struct{ size int }{
+		{size: 1},
+		{size: 10},
+		{size: 100},
+		{size: 1_000},
+		{size: 10_000},
+	}
+	for _, row := range table {
+		b.Run(fmt.Sprintf("size_%d", row.size), func(b *testing.B) {
+			intervals := generateBenchmarkInput(row.size, 0)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				c := make(chan interval.Interval, row.size)
+				go (func() {
+					for _, interval := range intervals {
+						c <- interval
+					}
+					close(c)
+				})()
+				b.StartTimer()
+				interval.MergeFromChan(c)
+			}
+		})
+	}
+}
+
+func BenchmarkMergeFleet(b *testing.B) {
+	table := []struct{ size int }{
+		{size: 1},
+		{size: 10},
+		{size: 100},
+		{size: 1_000},
+		{size: 10_000},
+	}
+	for _, row := range table {
+		b.Run(fmt.Sprintf("size_%d", row.size), func(b *testing.B) {
+			intervals := generateBenchmarkInput(row.size, 0)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				b.StopTimer()
+				c := make(chan interval.Interval, row.size)
+				go (func() {
+					for _, interval := range intervals {
+						c <- interval
+					}
+					close(c)
+				})()
+				b.StartTimer()
+				interval.MergeFleet(c, 8)
 			}
 		})
 	}
