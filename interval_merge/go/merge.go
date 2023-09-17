@@ -1,14 +1,22 @@
 package interval
 
+// An Interval is a range with a lower and upper bound.
+// The lower bound is inclusive, the upper bound is exclusive.
 type Interval struct {
-	start int
-	end   int
+	start int // lower bound
+	end   int // upper bound
 }
 
+// New creates a new Interval with start as lower bound and end as upper bound.
 func New(start, end int) Interval {
 	return Interval{start, end}
 }
 
+// Merges all intervals together which overlap.
+// Resulting in a sorted slice of Intervals, where no Interval overlaps another.
+// Intervals are bound inclusively below and exclusively above.
+// Which means when an Interval upper bound is the same as another Intervals lower bound,
+// both intervals don't overlap.
 func Merge(intervals []Interval) []Interval {
 	merged_intervals := make([]Interval, 0, 8)
 	for _, interval := range intervals {
@@ -17,6 +25,12 @@ func Merge(intervals []Interval) []Interval {
 	return merged_intervals
 }
 
+// merge_into merges one interval into the provided slice and returns it.
+// It either gets prepended if it is smaller than the first element,
+// or append if it is larger than the last element.
+// If the interval overlaps with another, source is merged into the matched element.
+// If the upper bound grew after merge, a rollup happens. See rollup function.
+// The length of the slice might grow by one or shrink down to one.
 func merge_into(source Interval, intervals []Interval) []Interval {
 	for i, interval := range intervals {
 		// Does source end before interval?
@@ -39,12 +53,17 @@ func merge_into(source Interval, intervals []Interval) []Interval {
 			return rollup(intervals, i, intervals[i].end)
 		}
 	}
+	// source is larger than any interval in intervals
 	intervals = append(intervals, source)
 	return intervals
 }
 
+// rollup merges all overlapping intervals together starting at from, which are smaller than end.
+// End changes on merge to the higher value of either end or the upper bound of the merged interval.
+// from is the index of the interval in intervals, which started the rollup because its upper bound grew.
 func rollup(intervals []Interval, from int, end int) []Interval {
 	for i, interval := range intervals[from+1:] {
+		// is interval smaller than the upper bound?
 		if interval.start < end {
 			end = max(end, interval.end)
 			// Re-slicing is expensive, could be optimized by storing the to be deleted ranges
@@ -55,6 +74,7 @@ func rollup(intervals []Interval, from int, end int) []Interval {
 	return intervals
 }
 
+// min returns the smallest number of n or m
 func min(n, m int) int {
 	if n < m {
 		return n
@@ -62,6 +82,7 @@ func min(n, m int) int {
 	return m
 }
 
+// max returns the largest number of n or m
 func max(n, m int) int {
 	if n > m {
 		return n
